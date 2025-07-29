@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Catcher Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            overflow: hidden;
+            height: 100vh;
+            user-select: none;
+            touch-action: none;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: linear-gradient(180deg, #0f1419 0%, #1e3c72 50%, #2a5298 100%);
+        }
+
+        .star {
+            position: absolute;
+            font-size: 20px;
+            color: #ffd700;
+            animation: twinkle 1s infinite alternate;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .name-item {
+            position: absolute;
+            font-size: 18px;
+            color: #ff69b4;
+            background: linear-gradient(45deg, #ff69b4, #ffd700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            animation: glow 1s infinite alternate;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.7; transform: scale(1); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+
+        @keyframes glow {
+            0% { opacity: 0.8; transform: scale(1); }
+            100% { opacity: 1; transform: scale(1.1); }
+        }
+
+        .basket {
+            position: absolute;
+            bottom: 20px;
+            width: 80px;
+            height: 60px;
+            background: linear-gradient(45deg, #8B4513, #A0522D);
+            border-radius: 0 0 40px 40px;
+            border: 3px solid #654321;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+            z-index: 3;
+        }
+
+        .basket::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            right: -5px;
+            height: 10px;
+            background: linear-gradient(45deg, #8B4513, #A0522D);
+            border-radius: 10px;
+            border: 2px solid #654321;
+        }
+
+        .basket::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            background: rgba(139, 69, 19, 0.3);
+            border-radius: 0 0 30px 30px;
+        }
+
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 4;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        #playerInfo {
+            position: absolute;
+            top: 60px;
+            left: 20px;
+            color: #ffd700;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 4;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        #livesInfo {
+            position: absolute;
+            top: 100px;
+            left: 20px;
+            color: #ff6b6b;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 4;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .life-lost {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            z-index: 5;
+            border: 2px solid #ffd700;
+        }
+
+        #gameOver h2 {
+            margin-bottom: 20px;
+            color: #ffd700;
+        }
+
+        #startScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 5;
+            border: 2px solid #ffd700;
+        }
+
+        #startScreen h1 {
+            color: #ffd700;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        #nameInput {
+            width: 100%;
+            padding: 15px;
+            margin: 20px 0;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #333;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            transition: transform 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        .cloud {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 30px;
+            animation: float 10s infinite linear;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            from { transform: translateX(-100px); }
+            to { transform: translateX(calc(100vw + 100px)); }
+        }
+
+        #instructions {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            text-align: center;
+            font-size: 16px;
+            opacity: 0.8;
+            z-index: 4;
+        }
+
+        #soundToggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 4;
+            transition: background 0.3s ease;
+        }
+
+        #soundToggle:hover {
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .bonus-text {
+            position: absolute;
+            color: #ff69b4;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 6;
+            animation: bonusPop 1s ease-out forwards;
+            pointer-events: none;
+        }
+
+        @keyframes bonusPop {
+            0% { transform: scale(0) translateY(0); opacity: 1; }
+            50% { transform: scale(1.2) translateY(-20px); opacity: 1; }
+            100% { transform: scale(1) translateY(-40px); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="startScreen">
+            <h1>🌟 Star Catcher 🌟</h1>
+            <p>Enter your name to start the magical adventure!</p>
+            <input type="text" id="nameInput" placeholder="Enter your name..." maxlength="15">
+            <br>
+            <button class="btn" id="startBtn">Start Game</button>
+            <p style="font-size: 14px; margin-top: 15px; opacity: 0.8;">
+                ⭐ Stars = 1 point<br>
+                💖 Your Name = 5 points<br>
+                ⚠️ Don't miss more than 10 stars!
+            </p>
+        </div>
+        
+        <div id="score">Stars: 0</div>
+        <div id="playerInfo"></div>
+        <div id="livesInfo">Missed: 0/10</div>
+        <button id="soundToggle">🔊</button>
+        
+        <div class="basket" id="basket"></div>
+        <div id="instructions">
+            <p>Drag the basket to catch falling stars and your name!</p>
+            <p>Touch and drag on mobile</p>
+        </div>
+        
+        <div id="gameOver">
+            <h2>Game Over!</h2>
+            <p>Well played, <span id="playerNameEnd"></span>!</p>
+            <p>Final Score: <span id="finalScore">0</span> points</p>
+            <button class="btn" id="restartBtn">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        class SoundManager {
+            constructor() {
+                this.audioContext = null;
+                this.sounds = {};
+                this.enabled = true;
+                this.initAudio();
+            }
+            
+            async initAudio() {
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.createSounds();
+                } catch (e) {
+                    console.log('Audio not supported');
+                }
+            }
+            
+            createSounds() {
+                // Create sound effects using Web Audio API
+                this.sounds = {
+                    collect: this.createTone(523.25, 0.2, 'sine'), // C5
+                    bonus: this.createChord([523.25, 659.25, 783.99], 0.4, 'sine'), // C major chord
+                    gameOver: this.createTone(196, 1, 'sine'), // G3
+                    start: this.createChord([261.63, 329.63, 392], 0.6, 'sine'), // C major
+                    miss: this.createTone(220, 0.3, 'sawtooth') // A3 - warning sound
+                };
+            }
+            
+            createTone(frequency, duration, type = 'sine') {
+                return () => {
+                    if (!this.enabled || !this.audioContext) return;
+                    
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+                    oscillator.type = type;
+                    
+                    gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+                    
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + duration);
+                };
+            }
+            
+            createChord(frequencies, duration, type = 'sine') {
+                return () => {
+                    if (!this.enabled || !this.audioContext) return;
+                    
+                    frequencies.forEach(freq => {
+                        const oscillator = this.audioContext.createOscillator();
+                        const gainNode = this.audioContext.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(this.audioContext.destination);
+                        
+                        oscillator.frequency.setValueAtTime(freq, this.audioContext.currentTime);
+                        oscillator.type = type;
+                        
+                        gainNode.gain.setValueAtTime(0.05, this.audioContext.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+                        
+                        oscillator.start(this.audioContext.currentTime);
+                        oscillator.stop(this.audioContext.currentTime + duration);
+                    });
+                };
+            }
+            
+            play(soundName) {
+                if (this.sounds[soundName]) {
+                    this.sounds[soundName]();
+                }
+            }
+            
+            toggle() {
+                this.enabled = !this.enabled;
+                return this.enabled;
+            }
+        }
+
+        class StarCatcherGame {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.basket = document.getElementById('basket');
+                this.scoreElement = document.getElementById('score');
+                this.playerInfoElement = document.getElementById('playerInfo');
+                this.livesInfoElement = document.getElementById('livesInfo');
+                this.gameOverElement = document.getElementById('gameOver');
+                this.finalScoreElement = document.getElementById('finalScore');
+                this.instructionsElement = document.getElementById('instructions');
+                this.startScreen = document.getElementById('startScreen');
+                this.nameInput = document.getElementById('nameInput');
+                this.playerNameEnd = document.getElementById('playerNameEnd');
+                this.soundToggle = document.getElementById('soundToggle');
+                
+                this.soundManager = new SoundManager();
+                this.playerName = '';
+                this.score = 0;
+                this.missedStars = 0;
+                this.maxMissedStars = 10;
+                this.stars = [];
+                this.nameItems = [];
+                this.gameRunning = false;
+                this.gameStarted = false;
+                this.basketX = window.innerWidth / 2 - 40;
+                this.basketSpeed = 8;
+                this.starSpeed = 2;
+                this.starSpawnRate = 0.02;
+                this.nameSpawnTimer = 0;
+                this.nameSpawnInterval = 5000; // 5 seconds
+                
+                this.setupCanvas();
+                this.setupBasket();
+                this.setupEventListeners();
+                this.createClouds();
+            }
+            
+            setupCanvas() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+                
+                // Create starfield background
+                this.stars_bg = [];
+                for (let i = 0; i < 100; i++) {
+                    this.stars_bg.push({
+                        x: Math.random() * this.canvas.width,
+                        y: Math.random() * this.canvas.height,
+                        size: Math.random() * 2 + 1,
+                        twinkle: Math.random() * Math.PI * 2
+                    });
+                }
+            }
+            
+            setupBasket() {
+                this.basket.style.left = this.basketX + 'px';
+            }
+            
+            setupEventListeners() {
+                // Start game
+                document.getElementById('startBtn').addEventListener('click', () => this.startGame());
+                this.nameInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.startGame();
+                });
+                
+                // Sound toggle
+                this.soundToggle.addEventListener('click', () => this.toggleSound());
+                
+                // Mouse events
+                this.basket.addEventListener('mousedown', (e) => this.startDrag(e));
+                document.addEventListener('mousemove', (e) => this.drag(e));
+                document.addEventListener('mouseup', () => this.endDrag());
+                
+                // Touch events for mobile
+                this.basket.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.startDrag(e.touches[0]);
+                });
+                document.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    this.drag(e.touches[0]);
+                });
+                document.addEventListener('touchend', () => this.endDrag());
+                
+                // Restart button
+                document.getElementById('restartBtn').addEventListener('click', () => this.restart());
+                
+                // Window resize
+                window.addEventListener('resize', () => this.handleResize());
+                
+                this.isDragging = false;
+                this.dragOffset = 0;
+            }
+            
+            startGame() {
+                const name = this.nameInput.value.trim();
+                if (!name) {
+                    alert('Please enter your name!');
+                    return;
+                }
+                
+                this.playerName = name;
+                this.startScreen.style.display = 'none';
+                this.playerInfoElement.textContent = `Player: ${this.playerName}`;
+                this.livesInfoElement.textContent = `Missed: 0/${this.maxMissedStars}`;
+                this.gameRunning = true;
+                this.gameStarted = true;
+                this.nameSpawnTimer = Date.now();
+                
+                this.soundManager.play('start');
+                
+                // Resume audio context if needed
+                if (this.soundManager.audioContext && this.soundManager.audioContext.state === 'suspended') {
+                    this.soundManager.audioContext.resume();
+                }
+                
+                this.gameLoop();
+            }
+            
+            toggleSound() {
+                const enabled = this.soundManager.toggle();
+                this.soundToggle.textContent = enabled ? '🔊' : '🔇';
+            }
+            
+            startDrag(e) {
+                if (!this.gameRunning) return;
+                this.isDragging = true;
+                const basketRect = this.basket.getBoundingClientRect();
+                this.dragOffset = e.clientX - basketRect.left;
+                this.instructionsElement.style.display = 'none';
+            }
+            
+            drag(e) {
+                if (!this.isDragging || !this.gameRunning) return;
+                
+                const newX = e.clientX - this.dragOffset;
+                this.basketX = Math.max(0, Math.min(window.innerWidth - 80, newX));
+                this.basket.style.left = this.basketX + 'px';
+            }
+            
+            endDrag() {
+                this.isDragging = false;
+            }
+            
+            createClouds() {
+                setInterval(() => {
+                    if (Math.random() < 0.3) {
+                        const cloud = document.createElement('div');
+                        cloud.className = 'cloud';
+                        cloud.innerHTML = '☁';
+                        cloud.style.top = Math.random() * 200 + 'px';
+                        cloud.style.left = '-100px';
+                        document.getElementById('gameContainer').appendChild(cloud);
+                        
+                        setTimeout(() => cloud.remove(), 12000);
+                    }
+                }, 3000);
+            }
+            
+            spawnStar() {
+                const star = {
+                    x: Math.random() * (window.innerWidth - 30),
+                    y: -30,
+                    speed: this.starSpeed + Math.random() * 2,
+                    element: null,
+                    type: 'star'
+                };
+                
+                star.element = document.createElement('div');
+                star.element.className = 'star';
+                star.element.innerHTML = '⭐';
+                star.element.style.left = star.x + 'px';
+                star.element.style.top = star.y + 'px';
+                document.getElementById('gameContainer').appendChild(star.element);
+                
+                this.stars.push(star);
+            }
+            
+            spawnNameItem() {
+                const nameItem = {
+                    x: Math.random() * (window.innerWidth - 100),
+                    y: -40,
+                    speed: this.starSpeed + Math.random() * 1.5,
+                    element: null,
+                    type: 'name'
+                };
+                
+                nameItem.element = document.createElement('div');
+                nameItem.element.className = 'name-item';
+                nameItem.element.innerHTML = this.playerName;
+                nameItem.element.style.left = nameItem.x + 'px';
+                nameItem.element.style.top = nameItem.y + 'px';
+                document.getElementById('gameContainer').appendChild(nameItem.element);
+                
+                this.nameItems.push(nameItem);
+            }
+            
+            updateStars() {
+                // Update regular stars
+                for (let i = this.stars.length - 1; i >= 0; i--) {
+                    const star = this.stars[i];
+                    star.y += star.speed;
+                    star.element.style.top = star.y + 'px';
+                    
+                    // Check collision with basket
+                    if (this.checkCollision(star)) {
+                        this.collectItem(star, i, 'stars');
+                        continue;
+                    }
+                    
+                    // Remove stars that fell off screen
+                    if (star.y > window.innerHeight) {
+                        star.element.remove();
+                        this.stars.splice(i, 1);
+                        
+                        // Only count missed stars, not missed names
+                        if (star.type === 'star') {
+                            this.missedStars++;
+                            this.updateLivesDisplay();
+                            this.soundManager.play('miss');
+                            
+                            // Check if game over
+                            if (this.missedStars >= this.maxMissedStars) {
+                                this.gameOver();
+                                return;
+                            }
+                        }
+                    }
+                }
+                
+                // Update name items
+                for (let i = this.nameItems.length - 1; i >= 0; i--) {
+                    const nameItem = this.nameItems[i];
+                    nameItem.y += nameItem.speed;
+                    nameItem.element.style.top = nameItem.y + 'px';
+                    
+                    // Check collision with basket
+                    if (this.checkCollision(nameItem)) {
+                        this.collectItem(nameItem, i, 'nameItems');
+                        continue;
+                    }
+                    
+                    // Remove name items that fell off screen
+                    if (nameItem.y > window.innerHeight) {
+                        nameItem.element.remove();
+                        this.nameItems.splice(i, 1);
+                    }
+                }
+            }
+            
+            checkCollision(item) {
+                const basketRect = {
+                    x: this.basketX,
+                    y: window.innerHeight - 80,
+                    width: 80,
+                    height: 60
+                };
+                
+                const itemRect = {
+                    x: item.x,
+                    y: item.y,
+                    width: item.type === 'name' ? this.playerName.length * 12 : 30,
+                    height: 30
+                };
+                
+                return itemRect.x < basketRect.x + basketRect.width &&
+                       itemRect.x + itemRect.width > basketRect.x &&
+                       itemRect.y < basketRect.y + basketRect.height &&
+                       itemRect.y + itemRect.height > basketRect.y;
+            }
+            
+            updateLivesDisplay() {
+                this.livesInfoElement.textContent = `Missed: ${this.missedStars}/${this.maxMissedStars}`;
+                
+                // Add shake animation when close to game over
+                if (this.missedStars >= this.maxMissedStars - 3) {
+                    this.livesInfoElement.classList.add('life-lost');
+                    setTimeout(() => {
+                        this.livesInfoElement.classList.remove('life-lost');
+                    }, 500);
+                }
+                
+                // Change color based on remaining lives
+                if (this.missedStars >= this.maxMissedStars - 2) {
+                    this.livesInfoElement.style.color = '#ff3333'; // Red
+                } else if (this.missedStars >= this.maxMissedStars - 5) {
+                    this.livesInfoElement.style.color = '#ffaa00'; // Orange
+                } else {
+                    this.livesInfoElement.style.color = '#ff6b6b'; // Original red
+                }
+            }
+            
+            collectItem(item, index, arrayName) {
+                item.element.remove();
+                
+                if (arrayName === 'stars') {
+                    this.stars.splice(index, 1);
+                    this.score += 1;
+                    this.soundManager.play('collect');
+                    this.createSparkles(item.x + 15, item.y + 15);
+                } else if (arrayName === 'nameItems') {
+                    this.nameItems.splice(index, 1);
+                    this.score += 5;
+                    this.soundManager.play('bonus');
+                    this.createSparkles(item.x + 15, item.y + 15);
+                    this.showBonusText(item.x + 15, item.y + 15);
+                }
+                
+                this.scoreElement.textContent = `Stars: ${this.score}`;
+                
+                // Increase difficulty
+                if (this.score % 10 === 0) {
+                    this.starSpeed += 0.3;
+                    this.starSpawnRate += 0.003;
+                }
+            }
+            
+            showBonusText(x, y) {
+                const bonusText = document.createElement('div');
+                bonusText.className = 'bonus-text';
+                bonusText.innerHTML = '+5 BONUS!';
+                bonusText.style.left = x + 'px';
+                bonusText.style.top = y + 'px';
+                
+                document.getElementById('gameContainer').appendChild(bonusText);
+                setTimeout(() => bonusText.remove(), 1000);
+            }
+            
+            createSparkles(x, y) {
+                for (let i = 0; i < 8; i++) {
+                    const sparkle = document.createElement('div');
+                    sparkle.innerHTML = '✨';
+                    sparkle.style.position = 'absolute';
+                    sparkle.style.left = x + Math.random() * 40 - 20 + 'px';
+                    sparkle.style.top = y + Math.random() * 40 - 20 + 'px';
+                    sparkle.style.fontSize = '16px';
+                    sparkle.style.pointerEvents = 'none';
+                    sparkle.style.zIndex = '6';
+                    sparkle.style.animation = 'twinkle 0.8s ease-out forwards';
+                    
+                    document.getElementById('gameContainer').appendChild(sparkle);
+                    setTimeout(() => sparkle.remove(), 800);
+                }
+            }
+            
+            drawBackground() {
+                // Clear canvas
+                this.ctx.fillStyle = 'transparent';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw twinkling stars
+                this.ctx.fillStyle = 'white';
+                this.stars_bg.forEach(star => {
+                    star.twinkle += 0.02;
+                    const alpha = (Math.sin(star.twinkle) + 1) / 2 * 0.8 + 0.2;
+                    this.ctx.globalAlpha = alpha;
+                    this.ctx.beginPath();
+                    this.ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                    this.ctx.fill();
+                });
+                this.ctx.globalAlpha = 1;
+            }
+            
+            gameLoop() {
+                if (!this.gameRunning) return;
+                
+                this.drawBackground();
+                
+                // Spawn stars
+                if (Math.random() < this.starSpawnRate) {
+                    this.spawnStar();
+                }
+                
+                // Spawn name items every 5 seconds
+                if (Date.now() - this.nameSpawnTimer > this.nameSpawnInterval) {
+                    this.spawnNameItem();
+                    this.nameSpawnTimer = Date.now();
+                }
+                
+                this.updateStars();
+                
+                requestAnimationFrame(() => this.gameLoop());
+            }
+            
+            gameOver() {
+                this.gameRunning = false;
+                this.playerNameEnd.textContent = this.playerName;
+                this.finalScoreElement.textContent = this.score;
+                
+                // Update game over message based on reason
+                const gameOverTitle = this.gameOverElement.querySelector('h2');
+                if (this.missedStars >= this.maxMissedStars) {
+                    gameOverTitle.textContent = 'Too Many Stars Missed!';
+                    gameOverTitle.style.color = '#ff6b6b';
+                } else {
+                    gameOverTitle.textContent = 'Game Over!';
+                    gameOverTitle.style.color = '#ffd700';
+                }
+                
+                this.gameOverElement.style.display = 'block';
+                this.soundManager.play('gameOver');
+                
+                // Remove all items
+                this.stars.forEach(star => star.element.remove());
+                this.nameItems.forEach(nameItem => nameItem.element.remove());
+                this.stars = [];
+                this.nameItems = [];
+            }
+            
+            restart() {
+                this.gameRunning = false;
+                this.gameStarted = false;
+                this.score = 0;
+                this.missedStars = 0;
+                this.starSpeed = 2;
+                this.starSpawnRate = 0.02;
+                this.basketX = window.innerWidth / 2 - 40;
+                this.nameSpawnTimer = 0;
+                
+                this.scoreElement.textContent = 'Stars: 0';
+                this.livesInfoElement.textContent = 'Missed: 0/10';
+                this.livesInfoElement.style.color = '#ff6b6b'; // Reset color
+                this.gameOverElement.style.display = 'none';
+                this.startScreen.style.display = 'block';
+                this.instructionsElement.style.display = 'block';
+                this.nameInput.value = this.playerName;
+                this.setupBasket();
+                
+                // Remove any remaining items
+                this.stars.forEach(star => star.element.remove());
+                this.nameItems.forEach(nameItem => nameItem.element.remove());
+                this.stars = [];
+                this.nameItems = [];
+            }
+            
+            handleResize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+                this.basketX = Math.min(this.basketX, window.innerWidth - 80);
+                this.setupBasket();
+            }
+        }
+        
+        // Start the game when page loads
+        window.addEventListener('load', () => {
+            new StarCatcherGame();
+        });
+    </script>
+</body>
+</html>
